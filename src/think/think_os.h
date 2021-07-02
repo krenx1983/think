@@ -81,8 +81,8 @@ extern "C" {
 #include <process.h>
 #include <direct.h>
 #include <io.h>
-#include <winsock.h>
-
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 #elif defined(__THINK_UNIX__)	/* unix */
 
@@ -248,7 +248,11 @@ int getopt(int argc,char *argv[],const char *ostr);
 #define think_errno errno
 #define think_socketerrno errno
 #else
+
+#ifndef EWOULDBLOCK 
 #define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+
 const char *think_strerror(int e);
 #define think_errno GetLastError()
 #define think_socketerrno WSAGetLastError()

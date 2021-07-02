@@ -78,8 +78,8 @@ extern "C" {
 #include <process.h>
 #include <direct.h>
 #include <io.h>
-#include <winsock.h>
-
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 #elif defined(__THINK_UNIX__)	/* unix */
 
@@ -244,7 +244,11 @@ int getopt(int argc,char *argv[],const char *ostr);
 #define think_errno errno
 #define think_socketerrno errno
 #else
+
+#ifndef EWOULDBLOCK 
 #define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
+
 const char *think_strerror(int e);
 #define think_errno GetLastError()
 #define think_socketerrno WSAGetLastError()
@@ -462,7 +466,7 @@ int think_automkdir(const char *path,int flags);
 
 struct __think_net {
 	int sockfd;
-	char ip[16];
+	char ip[54];
 	unsigned short port;
 };
 typedef struct __think_net THINK_NET;
@@ -830,6 +834,9 @@ int think_db_putfieldbyname(THINK_DB *db,const char *name,const void *value,unsi
 /* think_db_insert */
 int think_db_insert(THINK_DB *db);
 
+/* think_db_delete */
+int think_db_delete(THINK_DB *db);
+
 /* think_db_seek */
 int think_db_seek(THINK_DB *db,int offset,int whence);
 
@@ -1189,7 +1196,7 @@ int think_threadjoin(THINK_THREAD *thread,int *exitcode,int timeout);
 
 struct __think_threadmutex{
 #ifdef __THINK_WINDOWS__ /* Windows */
-	HANDLE handle;
+	CRITICAL_SECTION cs;
 #else /* UNIX */
 	pthread_mutex_t *threadmutex;
 #endif

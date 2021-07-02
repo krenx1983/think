@@ -562,8 +562,10 @@ int think_netcenter_idle(THINK_NETCENTER *netcenter,int timeout)
 	int n,i;
 
 	think_netcenter_clean(netcenter);
-	if(netcenter->netlist==NULL)
-		return 0;
+	if(netcenter->netlist==NULL){
+		think_error(0,"[%s]:netlist is empty.",__func__);
+		return -1;
+	}
 	if((n=epoll_wait(netcenter->epfd,events,THINK_NETCENTER_MAX_CONNECTIONS,timeout))<0){
 		if(think_socketerrno==EINTR)
 			return 0;
@@ -623,8 +625,10 @@ int think_netcenter_idle(THINK_NETCENTER *netcenter,int timeout)
 	int n,i;
 
 	think_netcenter_clean(netcenter);
-	if(netcenter->netlist==NULL)
-		return 0;
+	if(netcenter->netlist==NULL){
+		think_error(0,"[%s]:netlist is empty.",__func__);
+		return -1;
+	}
 	if(timeout<0)
 		pt=NULL;
 	else{
@@ -692,8 +696,10 @@ int think_netcenter_idle(THINK_NETCENTER *netcenter,int timeout)
 	int n;
 
 	think_netcenter_clean(netcenter);
-	if(netcenter->netlist==NULL)
-		return 0;
+	if(netcenter->netlist==NULL){
+		think_error(0,"[%s]:netlist is empty.",__func__);
+		return -1;
+	}
 	FD_ZERO(&fdrset);
 	FD_ZERO(&fdwset);
 	maxfd=0;
@@ -778,8 +784,10 @@ int think_netcenter_idle(THINK_NETCENTER *netcenter,int timeout)
 	int n,i;
 
 	think_netcenter_clean(netcenter);
-	if(netcenter->netlist==NULL)
-		return 0;
+	if(netcenter->netlist==NULL){
+		think_error(0,"[%s]:netlist is empty.",__func__);
+		return -1;
+	}
 
 	nfds=0;
 	p=netcenter->netlist;

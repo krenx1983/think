@@ -22,7 +22,7 @@ extern "C" {
 
 struct __think_net {
 	int sockfd;
-	char ip[16];
+	char ip[54];
 	unsigned short port;
 };
 typedef struct __think_net THINK_NET;

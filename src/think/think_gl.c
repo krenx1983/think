@@ -99,7 +99,7 @@ int think_gl_get(const char *msgbuf,unsigned int msglen,unsigned short no,char *
 				return -1;
 			}
 			memcpy(data,p,len);
-			if(!(flags & THINK_GL_BINARY) && !(opflags & THINK_GL_NOT_STRING)){
+			if(!(flags & THINK_GL_BINARY || flags & THINK_GL_RECORD || flags & THINK_GL_RECORDSET) && !(opflags & THINK_GL_NOT_STRING)){
 				if(len==size){
 					think_error(0,"[%s]:value size equal to len.[no=%d][type='%c'][size=%d][len=%d]",__func__,no,type,size,len);
 					return -1;
@@ -291,7 +291,7 @@ int think_gl_put(char *msgbuf,unsigned int msgsiz,unsigned short no,const char *
 				return -1;
 			}
 
-			if(!(flags & THINK_GL_BINARY) && !(opflags & THINK_GL_NOT_STRING)){
+			if(!(flags & THINK_GL_BINARY || flags & THINK_GL_RECORD || flags & THINK_GL_RECORDSET) && !(opflags & THINK_GL_NOT_STRING)){
 				len=strlen(data);
 				if(len==0 && opflags&THINK_GL_NOT_NULL){
 					think_error(0,"[%s]:field is null.[no=%d]",__func__,no);
@@ -881,10 +881,10 @@ int think_gl_getflags(const char *strflags)
 		flags|=THINK_GL_BINARY;
 	if(strstr(strflags,"unsigned"))
 		flags|=THINK_GL_UNSIGNED;
-	if(strstr(strflags,"record"))
-		flags|=THINK_GL_RECORD;
 	if(strstr(strflags,"recordset"))
 		flags|=THINK_GL_RECORDSET;
+	else if(strstr(strflags,"record"))
+		flags|=THINK_GL_RECORD;
 	if(strstr(strflags,"ignore"))
 		flags|=THINK_GL_IGNORE;
 	if(strstr(strflags,"notstring"))

@@ -106,6 +106,9 @@ int think_db_putfieldbyname(THINK_DB *db,const char *name,const void *value,unsi
 /* think_db_insert */
 int think_db_insert(THINK_DB *db);
 
+/* think_db_delete */
+int think_db_delete(THINK_DB *db);
+
 /* think_db_seek */
 int think_db_seek(THINK_DB *db,int offset,int whence);
 

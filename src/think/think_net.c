@@ -6,7 +6,7 @@ int think_netstart(void)
 #ifdef __THINK_WINDOWS__
 	WSADATA data;
 	
-	if(WSAStartup(MAKEWORD(1,1),&data)<0){
+	if(WSAStartup(MAKEWORD(2,2),&data)<0){
 		think_error(0,"[%s]:WSAStartup error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
 		return -1;
 	}
@@ -29,36 +29,27 @@ int think_netstop(void)
 
 THINK_NET *think_netconnect(const char *ip,unsigned short port)
 {
-	struct sockaddr_in servaddr;
+	struct addrinfo hints,*res;
 	int sockfd;
 	THINK_NET *net;
-	struct hostent *hp;
-	char IP[16];
-	struct in_addr **ppinaddr;
+	char strport[6];
 
-	bzero(&servaddr,sizeof(struct sockaddr_in));
-	servaddr.sin_family=AF_INET;
-	servaddr.sin_port=htons(port);
-	if((servaddr.sin_addr.s_addr=inet_addr(ip))==INADDR_NONE){
-		if((hp=gethostbyname(ip))==NULL){
-			think_error(0,"[%s]:gethostbyname error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
-			return NULL;
-		}
-		ppinaddr=(struct in_addr **)hp->h_addr_list;
-		if(*ppinaddr==NULL){
-			think_error(0,"[%s]:gethostname error.[no address found]",__func__);
-			return NULL;
-		}
-		snprintf(IP,sizeof(IP),"%s",inet_ntoa(**ppinaddr));
-		memcpy(&servaddr.sin_addr,*ppinaddr,sizeof(struct in_addr));
-	}else{
-		snprintf(IP,sizeof(IP),"%s",ip);
+	bzero(&hints,sizeof(struct addrinfo));
+	hints.ai_family=AF_UNSPEC;
+	hints.ai_socktype=SOCK_STREAM;
+
+	bzero(strport,sizeof(strport));
+	sprintf(strport,"%hu",port);
+	if(getaddrinfo(ip,strport,&hints,&res)<0){
+		think_error(0,"[%s]:getaddrinfo error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
+		return NULL;
 	}
-	if((sockfd=socket(AF_INET,SOCK_STREAM,0))<0){
+
+	if((sockfd=socket(res->ai_family,res->ai_socktype,res->ai_protocol))<0){
 		think_error(0,"[%s]:socket create error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
 		return NULL;
 	}
-	if(connect(sockfd,(struct sockaddr *)&servaddr,sizeof(struct sockaddr_in))<0){
+	if(connect(sockfd,res->ai_addr,res->ai_addrlen)<0){
 		think_error(0,"[%s]:connect error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
 		socketclose(sockfd);
 		return NULL;
@@ -70,7 +61,7 @@ THINK_NET *think_netconnect(const char *ip,unsigned short port)
 	}
 	memset(net,0x00,sizeof(THINK_NET));
 	net->sockfd=sockfd;
-	snprintf(net->ip,sizeof(net->ip),"%s",IP);
+	snprintf(net->ip,sizeof(net->ip),"%s",ip);
 	net->port=port;
 
 	return net;
@@ -78,24 +69,32 @@ THINK_NET *think_netconnect(const char *ip,unsigned short port)
 
 THINK_NET *think_netlisten(const char *ip,unsigned short port)
 {
-	struct sockaddr_in servaddr;
+	struct addrinfo hints,*res;
 	int sockfd;
 	struct linger so_linger;
 	int option;
 	THINK_NET *net;
+	char strport[6];
 
-	bzero(&servaddr,sizeof(struct sockaddr_in));
-	servaddr.sin_family=AF_INET;
-	servaddr.sin_port=htons(port);
+	bzero(&hints,sizeof(struct addrinfo));
+	hints.ai_flags=AI_PASSIVE;
+	hints.ai_family=AF_UNSPEC;
+	hints.ai_socktype=SOCK_STREAM;
+
+	bzero(strport,sizeof(strport));
+	sprintf(strport,"%hu",port);
 	if(strcmp(ip,"*")==0){
-		servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+		if(getaddrinfo(NULL,strport,&hints,&res)<0){
+			think_error(0,"[%s]:getaddrinfo error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
+			return NULL;
+		}
 	}else{
-		if((servaddr.sin_addr.s_addr=inet_addr(ip))==INADDR_NONE){
-			think_error(0,"[%s]:inet_addr error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
+		if(getaddrinfo(ip,strport,&hints,&res)<0){
+			think_error(0,"[%s]:getaddrinfo error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
 			return NULL;
 		}
 	}
-	if((sockfd=socket(AF_INET,SOCK_STREAM,0))<0){
+	if((sockfd=socket(res->ai_family,res->ai_socktype,res->ai_protocol))<0){
 		think_error(0,"[%s]:socket create error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
 		return NULL;
 	}
@@ -112,11 +111,12 @@ THINK_NET *think_netlisten(const char *ip,unsigned short port)
 		socketclose(sockfd);
 		return NULL;
 	}
-	if(bind(sockfd,(struct sockaddr *)&servaddr,sizeof(servaddr))<0){
+	if(bind(sockfd,res->ai_addr,res->ai_addrlen)<0){
 		think_error(0,"[%s]:bind error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
 		socketclose(sockfd);
 		return NULL;
 	}
+	freeaddrinfo(res);
 	if(listen(sockfd,5)<0){
 		think_error(0,"[%s]:listen error.[%d:%s][%s:%d]",__func__,think_socketerrno,think_strerror(think_socketerrno),ip,port);
 		socketclose(sockfd);
@@ -137,20 +137,43 @@ THINK_NET *think_netlisten(const char *ip,unsigned short port)
 
 THINK_NET *think_netaccept(THINK_NET *net)
 {
-	struct sockaddr_in addr;
+	struct sockaddr_storage addr;
+	struct sockaddr_in* addr_in;
+	struct sockaddr_in6* addr_in6;
 	socklen_t addrlen;
 	int sockfd;
-	char *p;
+	const char *p;
 	THINK_NET *client;
+	char ip[54];
+	unsigned short port;
 
 	addrlen=sizeof(addr);
 	if((sockfd=accept(net->sockfd,(struct sockaddr *)&addr,&addrlen))<0){
 		think_error(0,"[%s]:accept error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
 		return NULL;
 	}
-	if((p=inet_ntoa(addr.sin_addr))==NULL){
-		think_error(0,"[%s]:inet_ntoa error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
-		return NULL;
+
+	bzero(ip,sizeof(ip));
+	switch(addr.ss_family){
+		case AF_INET:
+			addr_in=(struct sockaddr_in*)&addr;
+			if((p=inet_ntop(AF_INET,&addr_in->sin_addr,ip,sizeof(ip)))==NULL){
+				think_error(0,"[%s]:inet_ntop error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
+				return NULL;
+			}
+			port=ntohs(addr_in->sin_port);
+			break;
+		case AF_INET6:
+			addr_in6=(struct sockaddr_in6*)&addr;
+			if((p=inet_ntop(AF_INET6,&addr_in6->sin6_addr,ip,sizeof(ip)))==NULL){
+				think_error(0,"[%s]:inet_ntop error.[%d:%s]",__func__,think_socketerrno,think_strerror(think_socketerrno));
+				return NULL;
+			}
+			port=ntohs(addr_in6->sin6_port);
+			break;
+		default:
+			think_error(0,"[%s]:unsupported address family",__func__);
+			return NULL;
 	}
 	if((client=malloc(sizeof(THINK_NET)))==NULL){
 		think_error(0,"[%s]:malloc error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
@@ -160,7 +183,7 @@ THINK_NET *think_netaccept(THINK_NET *net)
 	memset(client,0x00,sizeof(THINK_NET));
 	client->sockfd=sockfd;
 	snprintf(client->ip,sizeof(client->ip),"%s",p);
-	client->port=ntohs(addr.sin_port);
+	client->port=port;
 
 	return client;
 }

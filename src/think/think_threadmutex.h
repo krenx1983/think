@@ -20,7 +20,7 @@ extern "C" {
 
 struct __think_threadmutex{
 #ifdef __THINK_WINDOWS__ /* Windows */
-		HANDLE handle;
+		CRITICAL_SECTION cs;
 #else /* UNIX */
 		pthread_mutex_t *threadmutex;
 #endif

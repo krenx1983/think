@@ -11,11 +11,7 @@ THINK_THREADMUTEX *think_threadmutex_open()
 		return NULL;
 	}
 #ifdef __THINK_WINDOWS__ /* Windows */
-	if((threadmutex->handle=CreateSemaphore(NULL,1,65536,NULL))==NULL){
-		think_error(0,"[%s]:CreateSemaphore error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
-		free(threadmutex);
-		return NULL;
-	}
+	InitializeCriticalSection(&threadmutex->cs);
 #else /* UNIX */
 	if((threadmutex->threadmutex=malloc(sizeof(pthread_mutex_t)))==NULL){
 		think_error(0,"[%s]:malloc error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
@@ -34,16 +30,7 @@ THINK_THREADMUTEX *think_threadmutex_open()
 int think_threadmutex_lock(THINK_THREADMUTEX *threadmutex,int timeout)
 {
 #ifdef __THINK_WINDOWS__ /* Windows */
-	int r;
-
-	if(timeout<0)
-		timeout=INFINITE;
-	if((r=WaitForSingleObject(threadmutex->handle,timeout))!=WAIT_OBJECT_0){
-		if(r==WAIT_TIMEOUT)
-			return 0;
-		think_error(0,"[%s]:WaitForSingleObject error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
-		return -1;
-	}
+	EnterCriticalSection(&threadmutex->cs);
 #else /* UNIX */
 	if(timeout<0){
 		if(pthread_mutex_lock(threadmutex->threadmutex)<0){
@@ -72,10 +59,7 @@ int think_threadmutex_lock(THINK_THREADMUTEX *threadmutex,int timeout)
 int think_threadmutex_unlock(THINK_THREADMUTEX *threadmutex)
 {
 #ifdef __THINK_WINDOWS__ /* Windows */
-	if(ReleaseSemaphore(threadmutex->handle,1,NULL)==0){
-		think_error(0,"[%s]:ReleaseSemaphore error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
-		return -1;
-	}
+	LeaveCriticalSection(&threadmutex->cs);
 #else /* UNIX */
 	if(pthread_mutex_unlock(threadmutex->threadmutex)<0){
 		think_error(0,"[%s]:pthread_mutex_unlock error.[%d:%s]",__func__,think_errno,think_strerror(think_errno));
@@ -88,7 +72,7 @@ int think_threadmutex_unlock(THINK_THREADMUTEX *threadmutex)
 int think_threadmutex_close(THINK_THREADMUTEX *threadmutex)
 {
 #ifdef __THINK_WINDOWS__ /* Windows */
-	CloseHandle(threadmutex->handle);
+	DeleteCriticalSection(&threadmutex->cs);
 #else /* UNIX */
 	pthread_mutex_destroy(threadmutex->threadmutex);
 	free(threadmutex->threadmutex);
