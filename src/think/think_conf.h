@@ -2,7 +2,7 @@
  * think_conf.h: Think Conf Interface
  * version: 1.0
  * OS: AIX,HP-UX,Solaris,FreeBSD,Linux,Mac OS X,Windows
- * author: luojian(luojian1983@sohu.com)
+ * author: krenx(krenx@qq.com)
  * history:
  * 2008-11-14	1.0 released
  *
