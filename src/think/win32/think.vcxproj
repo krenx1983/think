@@ -272,7 +272,6 @@ copy /Y ..\think.h ..\..\..\include\think.h </Command>
     <ClInclude Include="..\think_net.h" />
     <ClInclude Include="..\think_netcenter.h" />
     <ClInclude Include="..\think_os.h" />
-    <ClInclude Include="..\think_route.h" />
     <ClInclude Include="..\think_sem.h" />
     <ClInclude Include="..\think_shm.h" />
     <ClInclude Include="..\think_shmq.h" />

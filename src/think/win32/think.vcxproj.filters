@@ -106,9 +106,6 @@
     <ClInclude Include="..\think_os.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\think_route.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\think_sem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
