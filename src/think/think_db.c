@@ -518,8 +518,8 @@ THINK_DB *think_db_open(const char *pathname,int flags,THINK_DB_FIELD *fieldarra
 
 THINK_DB *think_db_openx(const char *pathname,int flags,const char *conffile)
 {
-	THINK_DB_FIELD *p,*fieldarray;
-	int h,db_create,fieldcount;
+	THINK_DB_FIELD *p,*fieldarray=NULL;
+	int h,db_create,fieldcount=0;
 	THINK_CONF *conf;
 	char tmpstr[128];
 	
@@ -962,15 +962,15 @@ int think_db_putfield(THINK_DB *db,unsigned int no,const void *value,unsigned in
 			memset(db->record_buffer+db->offset_array[no]+length,0x00,p->length-length);
 			break;
 		case THINK_DB_SHORT:
-			*((THINK_SHORT*)db->record_buffer + db->offset_array[no]) = think_htob2(*(THINK_SHORT*)value);
+			*((THINK_SHORT*)(db->record_buffer + db->offset_array[no])) = think_htob2(*(THINK_SHORT*)value);
 			break;
 		case THINK_DB_INT:
 		case THINK_DB_FLOAT:
-			*((THINK_INT*)db->record_buffer + db->offset_array[no]) = think_htob4(*(THINK_INT*)value);
+			*((THINK_INT*)(db->record_buffer + db->offset_array[no])) = think_htob4(*(THINK_INT*)value);
 			break;
 		case THINK_DB_LONG:
 		case THINK_DB_DOUBLE:
-			*((THINK_LONG*)db->record_buffer + db->offset_array[no]) = think_htob8(*(THINK_LONG*)value);
+			*((THINK_LONG*)(db->record_buffer + db->offset_array[no])) = think_htob8(*(THINK_LONG*)value);
 			break;
 		default:
 			break;
